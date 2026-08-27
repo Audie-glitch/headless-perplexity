@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start --hostname 127.0.0.1 --port 43147",
     "lint": "eslint",
-    "test": "tsx --test src/lib/perplexity/*.test.ts src/hooks/*.test.ts"
+    "test": "tsx --test src/lib/perplexity/*.test.ts src/hooks/*.test.ts src/app/api/**/*.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
