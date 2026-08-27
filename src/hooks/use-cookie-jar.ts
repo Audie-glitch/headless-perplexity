@@ -39,5 +39,48 @@ export function useCookieJar() {
     setDraft(null);
   }, [cookieJar]);
 
-  return { cookieJar, setCookieJar: setDraft, persist };
+  const persistValue = useCallback((value: string) => {
+    writePersisted(value.trim());
+    setDraft(null);
+  }, []);
+
+  return { cookieJar, setCookieJar: setDraft, persist, persistValue };
+}
+
+const EMAILNATOR_KEY = "plex.emailnator";
+const EMAILNATOR_EVENT = "plex-emailnator";
+
+function subscribeEmailnator(onChange: () => void) {
+  window.addEventListener("storage", onChange);
+  window.addEventListener(EMAILNATOR_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener(EMAILNATOR_EVENT, onChange);
+  };
+}
+
+function readEmailnator(): string {
+  return sessionStorage.getItem(EMAILNATOR_KEY) ?? "";
+}
+
+function writeEmailnator(value: string) {
+  if (value.trim()) {
+    sessionStorage.setItem(EMAILNATOR_KEY, value.trim());
+  } else {
+    sessionStorage.removeItem(EMAILNATOR_KEY);
+  }
+  window.dispatchEvent(new Event(EMAILNATOR_EVENT));
+}
+
+export function useEmailnatorJar() {
+  const persisted = useSyncExternalStore(subscribeEmailnator, readEmailnator, () => "");
+  const [draft, setDraft] = useState<string | null>(null);
+  const emailnatorCookies = draft ?? persisted;
+
+  const persistEmailnator = useCallback(() => {
+    writeEmailnator(emailnatorCookies);
+    setDraft(null);
+  }, [emailnatorCookies]);
+
+  return { emailnatorCookies, setEmailnatorCookies: setDraft, persistEmailnator };
 }

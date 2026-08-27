@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useCookieJar } from "@/hooks/use-cookie-jar";
+import { useCookieJar, useEmailnatorJar } from "@/hooks/use-cookie-jar";
 import {
   AlertCircle,
   BookOpen,
@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Send,
   Shield,
+  UserPlus,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -53,13 +54,19 @@ export function Playground() {
   const [model, setModel] = useState("perplexity/best");
   const [sources, setSources] = useState<SourceFocus[]>(["web"]);
   const [stream, setStream] = useState(true);
-  const { cookieJar, setCookieJar, persist } = useCookieJar();
+  const { cookieJar, setCookieJar, persist, persistValue } = useCookieJar();
+  const { emailnatorCookies, setEmailnatorCookies, persistEmailnator } = useEmailnatorJar();
+  const [magicLink, setMagicLink] = useState("");
+  const [minting, setMinting] = useState(false);
+  const [mintStatus, setMintStatus] = useState<string | null>(null);
+  const [mintError, setMintError] = useState<string | null>(null);
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [health, setHealth] = useState<{
     hasSessionEnv: boolean;
     hasOfficialKey: boolean;
+    hasEmailnatorEnv: boolean;
   } | null>(null);
   const [cursor, setCursor] = useState<{
     backendUuid?: string | null;
@@ -74,6 +81,7 @@ export function Playground() {
         setHealth({
           hasSessionEnv: Boolean(payload.hasSessionEnv),
           hasOfficialKey: Boolean(payload.hasOfficialKey),
+          hasEmailnatorEnv: Boolean(payload.hasEmailnatorEnv),
         }),
       )
       .catch(() => setHealth(null));
@@ -114,6 +122,50 @@ export function Playground() {
     setTurns([]);
     setCursor({});
     setError(null);
+  }
+
+  async function mint(body: Record<string, string>) {
+    if (minting) {
+      return;
+    }
+
+    persistEmailnator();
+
+    setMinting(true);
+    setMintError(null);
+    setMintStatus("Requesting a disposable inbox and Perplexity sign-in email…");
+
+    try {
+      const response = await fetch("/api/mint", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const payload = (await response.json()) as {
+        email?: string;
+        cookies?: string;
+        error?: { message?: string } | string;
+      };
+      if (!response.ok || !payload.cookies) {
+        const message =
+          typeof payload.error === "string"
+            ? payload.error
+            : payload.error?.message || `Mint failed (${response.status})`;
+        throw new Error(message);
+      }
+      persistValue(payload.cookies);
+      setMintStatus(
+        payload.email
+          ? `Minted a session for ${payload.email}. It is now in Whole cookie.`
+          : "Minted a session. It is now in Whole cookie.",
+      );
+    } catch (caught) {
+      const message = caught instanceof Error ? caught.message : "Account mint failed.";
+      setMintError(message);
+      setMintStatus(null);
+    } finally {
+      setMinting(false);
+    }
   }
 
   async function onSubmit(event: React.FormEvent) {
@@ -290,7 +342,8 @@ export function Playground() {
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
               Query Perplexity over HTTP. No Comet browser, no Chrome DevTools
-              Protocol, no connector OAuth. Session cookies stay on this machine.
+              Protocol, no connector OAuth. Paste a cookie jar or mint a free
+              session through official email sign-in. Credentials stay on this machine.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -372,6 +425,64 @@ export function Playground() {
               </p>
             </div>
 
+            <Separator />
+
+            <div className="space-y-2">
+              <Label htmlFor="emailnator">Account minting</Label>
+              <Textarea
+                id="emailnator"
+                autoComplete="off"
+                spellCheck={false}
+                rows={4}
+                placeholder="Paste the emailnator.com Cookie header. Must include XSRF-TOKEN. Leave empty if EMAILNATOR_COOKIES is set on the server."
+                value={emailnatorCookies}
+                onChange={(event) => setEmailnatorCookies(event.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Opens emailnator.com, generates a Gmail-style address, calls
+                Perplexity&apos;s official email sign-in, and stores the resulting
+                session cookie here. Unofficial. Follow Perplexity&apos;s terms.
+                {health?.hasEmailnatorEnv ? " Server already has EMAILNATOR_COOKIES." : ""}
+              </p>
+              <Button
+                type="button"
+                className="w-full"
+                disabled={minting || (!emailnatorCookies.trim() && !health?.hasEmailnatorEnv)}
+                onClick={() =>
+                  void mint({
+                    emailnatorCookies: emailnatorCookies.trim(),
+                  })
+                }
+              >
+                {minting ? (
+                  <Loader2 className="animate-spin" data-icon="inline-start" />
+                ) : (
+                  <UserPlus data-icon="inline-start" />
+                )}
+                {minting ? "Minting" : "Mint account"}
+              </Button>
+              <Textarea
+                id="magic-link"
+                autoComplete="off"
+                spellCheck={false}
+                rows={3}
+                placeholder="Or paste a Perplexity sign-in link from the email: https://www.perplexity.ai/api/auth/callback/email?…"
+                value={magicLink}
+                onChange={(event) => setMagicLink(event.target.value)}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={minting || !magicLink.trim()}
+                onClick={() => void mint({ callbackUrl: magicLink.trim() })}
+              >
+                Redeem sign-in link
+              </Button>
+              {mintStatus ? <p className="text-xs text-emerald-200/80">{mintStatus}</p> : null}
+              {mintError ? <p className="text-xs text-destructive">{mintError}</p> : null}
+            </div>
+
             <Button type="button" variant="outline" className="w-full" onClick={resetThread}>
               <RotateCcw data-icon="inline-start" />
               Reset thread
@@ -445,6 +556,14 @@ export function Playground() {
   -H 'content-type: application/json' \\
   -d '{"query":"What is DNS over HTTPS?","model":"perplexity/best","stream":true,"cookies":"YOUR_WHOLE_COOKIE"}'`}
               />
+              <div className="mt-3">
+                <CodeCard
+                  title="Mint a session"
+                  body={`curl http://127.0.0.1:43147/api/mint \\
+  -H 'content-type: application/json' \\
+  -d '{"emailnatorCookies":"XSRF-TOKEN=...; emailnator_session=..."}'`}
+                />
+              </div>
             </TabsContent>
             <TabsContent value="openai">
               <CodeCard
@@ -459,7 +578,7 @@ export function Playground() {
                 <CardContent className="space-y-2 pt-4 text-sm text-muted-foreground">
                   <p>This is unofficial. Perplexity can change the WebUI contract without notice.</p>
                   <p>Datacenter IPs are often blocked by Cloudflare. Paste the whole cookie header, including cf_clearance, not just the session token.</p>
-                  <p>Account generation and rate-limit bypass are intentionally not implemented.</p>
+                  <p>Account minting uses Emailnator plus Perplexity&apos;s official email sign-in. It is not a rate-limit bypass and does not grant Pro.</p>
                   <p>Do not expose this server beyond localhost unless you add your own auth.</p>
                 </CardContent>
               </Card>

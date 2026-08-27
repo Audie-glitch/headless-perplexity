@@ -40,6 +40,13 @@ export class UpstreamError extends PerplexityError {
   }
 }
 
+export class MintError extends PerplexityError {
+  constructor(message: string, status = 502) {
+    super(message, "MINT_ERROR", status);
+    this.name = "MintError";
+  }
+}
+
 export function errorToPayload(error: unknown): {
   code: string;
   message: string;

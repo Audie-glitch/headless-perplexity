@@ -9,7 +9,7 @@ This is a research-informed reimplementation, not a fork. It follows the same We
 3. Streaming `POST /rest/sse/perplexity_ask`
 4. Parse both the older `text` SSE payload and the newer schematized `workflow_block` / JSON Patch stream
 
-Comet MCP bridges are out of scope. Account generation and rate-limit bypass are intentionally not implemented.
+Comet MCP bridges are out of scope. Optional account minting uses Emailnator plus Perplexity's official email sign-in. It does not grant Pro and is not a rate-limit bypass.
 
 ## Run locally
 
@@ -34,6 +34,7 @@ npm run build
 | Whole cookie (preferred) | Paste the entire `perplexity.ai` Cookie header (`document.cookie` or DevTools → Request Headers → `cookie`). Must include `__Secure-next-auth.session-token` and usually `cf_clearance` / `__cf_bm`. Send it as JSON `cookies`, `x-perplexity-cookies`, or `PERPLEXITY_COOKIES`. |
 | Session token only | `__Secure-next-auth.session-token` via `Authorization: Bearer` or `PERPLEXITY_SESSION_TOKEN`. Often blocked by Cloudflare. |
 | Official fallback | Set `PERPLEXITY_API_KEY`. Used only when the unofficial WebUI path returns 401/403. |
+| Account minting | `POST /api/mint` with Emailnator cookies, or redeem a Perplexity email callback URL. |
 
 Session tokens are bearer credentials. Keep them out of git, shell history, and any host bound to `0.0.0.0`.
 
@@ -81,6 +82,34 @@ curl http://127.0.0.1:43147/api/v1/chat/completions \
   }'
 ```
 
+### `POST /api/mint`
+
+Mints a free Perplexity session through official email sign-in and a disposable [Emailnator](https://www.emailnator.com) inbox. You paste Emailnator cookies (must include `XSRF-TOKEN`) after that site's Cloudflare check. The server then:
+
+1. `POST https://www.emailnator.com/generate-email` with `{ "email": ["googleMail"] }`
+2. `GET /api/auth/session` and `GET /api/auth/csrf` on Perplexity
+3. `POST /api/auth/signin/email` with the disposable address
+4. Poll Emailnator `/message-list` for `Sign in to Perplexity`
+5. Follow `https://www.perplexity.ai/api/auth/callback/email?...` and collect `Set-Cookie`
+
+```bash
+curl http://127.0.0.1:43147/api/mint \
+  -H 'content-type: application/json' \
+  -d '{"emailnatorCookies":"XSRF-TOKEN=...; emailnator_session=..."}'
+```
+
+Or redeem a sign-in link you already have:
+
+```bash
+curl http://127.0.0.1:43147/api/mint \
+  -H 'content-type: application/json' \
+  -d '{"callbackUrl":"https://www.perplexity.ai/api/auth/callback/email?token=..."}'
+```
+
+Server-side fallback: `EMAILNATOR_COOKIES` or `x-emailnator-cookies`. The playground Mint account button writes the returned cookie jar into Whole cookie.
+
+This is unofficial and may violate Perplexity's terms. You are responsible for how you use it. Datacenter IPs often fail both Emailnator and Perplexity with Cloudflare 403. A minted `__Secure-next-auth.session-token` still needs a `cf_clearance` bound to this IP and user agent before `/api/ask` works from a server.
+
 ### Other routes
 
 - `GET /api/health` — process status, whether env credentials are present
@@ -92,7 +121,7 @@ curl http://127.0.0.1:43147/api/v1/chat/completions \
 - Not an official Perplexity SDK
 - Not a Comet controller
 - Not a connector OAuth implementation
-- Not a way to mint accounts or dodge query limits
+- Not a way to dodge query limits or mint Pro
 
 Perplexity can change the WebUI contract at any time. Cloudflare often blocks datacenter IPs even with a valid session cookie, because clearance is bound to IP, user agent, and TLS fingerprint.
 
@@ -101,7 +130,7 @@ Perplexity can change the WebUI contract at any time. Cloudflare often blocks da
 Studied, not vendored:
 
 - [helallao/perplexity-ai](https://github.com/helallao/perplexity-ai) — Python WebUI wrapper and SSE ask client
-- [Soliver84/perplexity-ai-PRO-FREE](https://github.com/Soliver84/perplexity-ai-PRO-FREE) — same wrapper plus Emailnator account generation. Not used here.
+- [Soliver84/perplexity-ai-PRO-FREE](https://github.com/Soliver84/perplexity-ai-PRO-FREE) — same wrapper plus Emailnator account generation. Protocol used for `/api/mint`.
 - [yuki-20/PerplexiCode](https://github.com/yuki-20/PerplexiCode) — VS Code agent that pastes the whole Edge cookie header and uses a Chrome-like TLS fingerprint
 - [Villoh/tunnel-agent](https://github.com/Villoh/tunnel-agent) — desktop manager for local engines, including Perplexity sessions
 - [henrique-coder/perplexity-webui-scraper](https://github.com/henrique-coder/perplexity-webui-scraper) — current WebUI payload, search-init, and schematized stream format

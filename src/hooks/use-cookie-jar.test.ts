@@ -7,6 +7,8 @@ describe("cookie jar hydration contract", () => {
       fs.readFile(new URL("./use-cookie-jar.ts", import.meta.url), "utf8"),
     );
     assert.match(source, /useSyncExternalStore\(subscribe, readPersisted, \(\) => ""\)/);
+    assert.match(source, /useSyncExternalStore\(subscribeEmailnator, readEmailnator, \(\) => ""\)/);
+    assert.match(source, /persistValue/);
     assert.doesNotMatch(source, /typeof window/);
   });
 });

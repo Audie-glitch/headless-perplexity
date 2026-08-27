@@ -74,6 +74,12 @@ export function createChromeFetch(): typeof fetch {
 
           const responseHeaders = new Headers();
           for (const [key, value] of Object.entries(res.headers)) {
+            if (key.toLowerCase() === "set-cookie" && Array.isArray(value)) {
+              for (const cookie of value) {
+                responseHeaders.append("set-cookie", cookie);
+              }
+              continue;
+            }
             if (typeof value === "string") {
               responseHeaders.set(key, value);
             } else if (Array.isArray(value)) {
