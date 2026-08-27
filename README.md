@@ -31,7 +31,7 @@ npm run build
 | Method | How |
 | --- | --- |
 | Anonymous | Omit a token. Free/auto queries may work from residential IPs. |
-| WebUI session | Paste `__Secure-next-auth.session-token` from `perplexity.ai` into the playground, send `Authorization: Bearer <token>`, or set `PERPLEXITY_SESSION_TOKEN`. |
+| WebUI session | Paste a full `perplexity.ai` cookie string (preferred, includes `cf_clearance`) or just `__Secure-next-auth.session-token`. Send `x-perplexity-cookies`, `Authorization: Bearer <token>`, or set `PERPLEXITY_SESSION_TOKEN` / `PERPLEXITY_COOKIES`. |
 | Official fallback | Set `PERPLEXITY_API_KEY`. Used only when the unofficial WebUI path returns 401/403. |
 
 Session tokens are bearer credentials. Keep them out of git, shell history, and any host bound to `0.0.0.0`.
