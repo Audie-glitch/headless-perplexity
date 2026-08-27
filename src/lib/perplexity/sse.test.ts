@@ -44,6 +44,52 @@ describe("applySseData", () => {
     assert.equal(state.final, true);
   });
 
+  it("accumulates current markdown_block chunks", () => {
+    const state = emptyParsedState();
+    const schematized = createSchematizedState();
+
+    applySseData(
+      {
+        status: "PENDING",
+        blocks: [
+          {
+            intended_usage: "ask_text",
+            markdown_block: {
+              progress: "IN_PROGRESS",
+              chunks: ["DNS over HTTPS"],
+              chunk_starting_offset: 0,
+            },
+          },
+        ],
+      },
+      state,
+      schematized,
+    );
+    applySseData(
+      {
+        status: "COMPLETED",
+        final: true,
+        blocks: [
+          {
+            intended_usage: "ask_text",
+            markdown_block: {
+              progress: "DONE",
+              chunks: [" encrypts DNS queries."],
+              chunk_starting_offset: 1,
+              answer: "DNS over HTTPS encrypts DNS queries.",
+            },
+          },
+        ],
+      },
+      state,
+      schematized,
+    );
+
+    assert.equal(state.answer, "DNS over HTTPS encrypts DNS queries.");
+    assert.deepEqual(state.chunks, ["DNS over HTTPS", " encrypts DNS queries."]);
+    assert.equal(state.final, true);
+  });
+
   it("applies schematized workflow patches", () => {
     const state = emptyParsedState();
     const schematized = createSchematizedState();

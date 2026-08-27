@@ -5,6 +5,7 @@ export interface SchematizedStreamState {
   workflowBlock: Record<string, unknown> | null;
   answer: string | null;
   chunks: string[];
+  markdownChunks: string[];
 }
 
 export interface ParsedSseState {
@@ -17,7 +18,7 @@ export interface ParsedSseState {
 }
 
 export function createSchematizedState(): SchematizedStreamState {
-  return { workflowBlock: null, answer: null, chunks: [] };
+  return { workflowBlock: null, answer: null, chunks: [], markdownChunks: [] };
 }
 
 export function parseSseLine(line: string): Record<string, unknown> | null {
@@ -54,11 +55,11 @@ export function applySseData(
   if (typeof data.read_write_token === "string") {
     state.readWriteToken = data.read_write_token;
   }
-  if (data.final === true || data.final_sse_message === true || data.text_completed === true) {
+  const status = String(data.status ?? "").toUpperCase();
+  if (status === "COMPLETED" || (data.final === true && status !== "PENDING")) {
     state.final = true;
   }
 
-  const status = String(data.status ?? "").toUpperCase();
   const errorCode = data.error_code;
   if (errorCode != null) {
     const message = String(data.text ?? errorCode);
@@ -177,11 +178,15 @@ function processSchematizedBlocks(
   data: Record<string, unknown>,
   schematized: SchematizedStreamState,
 ): { answer?: string | null; chunks?: string[]; sources?: SearchResult[] } {
+  const sources: SearchResult[] = [];
+
   for (const raw of data.blocks as unknown[]) {
     if (!raw || typeof raw !== "object") {
       continue;
     }
     const block = raw as Record<string, unknown>;
+    extractMarkdownBlock(block, schematized);
+    sources.push(...extractWebResultBlock(block));
     if (block.workflow_block && typeof block.workflow_block === "object") {
       schematized.workflowBlock = structuredClone(block.workflow_block) as Record<string, unknown>;
     }
@@ -198,11 +203,73 @@ function processSchematizedBlocks(
     }
   }
 
+  if (schematized.markdownChunks.length || schematized.answer) {
+    return {
+      answer: schematized.answer,
+      chunks: [...schematized.markdownChunks],
+      sources,
+    };
+  }
+
   if (!schematized.workflowBlock) {
+    return sources.length ? { sources } : {};
+  }
+
+  return { ...extractWorkflowText(schematized.workflowBlock), sources };
+}
+
+function extractMarkdownBlock(
+  block: Record<string, unknown>,
+  schematized: SchematizedStreamState,
+): { answer?: string | null; chunks?: string[] } {
+  const markdown = block.markdown_block;
+  if (!markdown || typeof markdown !== "object") {
     return {};
   }
 
-  return extractWorkflowText(schematized.workflowBlock);
+  const payload = markdown as Record<string, unknown>;
+  const incoming = Array.isArray(payload.chunks)
+    ? payload.chunks.filter((chunk): chunk is string => typeof chunk === "string")
+    : [];
+  const offset = typeof payload.chunk_starting_offset === "number" ? payload.chunk_starting_offset : 0;
+
+  incoming.forEach((chunk, index) => {
+    schematized.markdownChunks[offset + index] = chunk;
+  });
+
+  if (typeof payload.answer === "string" && payload.answer) {
+    schematized.answer = payload.answer;
+  } else if (schematized.markdownChunks.length) {
+    schematized.answer = schematized.markdownChunks.join("");
+  }
+
+  schematized.chunks = [...schematized.markdownChunks];
+  return {
+    answer: schematized.answer,
+    chunks: [...schematized.markdownChunks],
+  };
+}
+
+function extractWebResultBlock(block: Record<string, unknown>): SearchResult[] {
+  const candidates = [block.web_result_block, block.sources_block, block.web_results];
+  for (const candidate of candidates) {
+    const rows = Array.isArray(candidate)
+      ? candidate
+      : candidate && typeof candidate === "object" && Array.isArray((candidate as { results?: unknown }).results)
+        ? ((candidate as { results: unknown[] }).results)
+        : [];
+    if (!rows.length) {
+      continue;
+    }
+    return rows
+      .filter((result): result is Record<string, unknown> => Boolean(result) && typeof result === "object")
+      .map((result) => ({
+        title: stringOrNull(result.name ?? result.title),
+        snippet: stringOrNull(result.snippet),
+        url: stringOrNull(result.url),
+      }));
+  }
+  return [];
 }
 
 function extractWorkflowText(workflowBlock: Record<string, unknown>): {

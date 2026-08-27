@@ -147,7 +147,11 @@ export function Playground() {
 
     const headers: Record<string, string> = { "content-type": "application/json" };
     if (sessionToken.trim()) {
-      headers.authorization = `Bearer ${sessionToken.trim()}`;
+      if (sessionToken.includes(";") && sessionToken.includes("=")) {
+        headers["x-perplexity-cookies"] = sessionToken.trim();
+      } else {
+        headers.authorization = `Bearer ${sessionToken.trim()}`;
+      }
     }
 
     const body = {
@@ -366,18 +370,19 @@ export function Playground() {
             <Separator />
 
             <div className="space-y-2">
-              <Label htmlFor="token">Session token</Label>
+              <Label htmlFor="token">Session cookie</Label>
               <Input
                 id="token"
                 type="password"
                 autoComplete="off"
-                placeholder="__Secure-next-auth.session-token"
+                placeholder="Full cookie header or __Secure-next-auth.session-token"
                 value={sessionToken}
                 onChange={(event) => setSessionToken(event.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Optional. Stored in sessionStorage only. Prefer read-only use of
-                your own account and revoke the session when you are done.
+                Optional. A full Perplexity cookie string works better than the
+                session token alone because it can include cf_clearance. Stored
+                in sessionStorage only. Revoke the session when you are done.
               </p>
             </div>
 

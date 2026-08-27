@@ -1,22 +1,67 @@
 import { API_BASE_URL, BROWSER_HEADERS, SESSION_COOKIE_NAMES } from "./constants";
 import type { AccountTier, SessionInfo } from "./types";
 
+export function parseCookieString(raw?: string): Record<string, string> {
+  if (!raw?.trim()) {
+    return {};
+  }
+
+  const cookies: Record<string, string> = {};
+  for (const part of raw.split(";")) {
+    const trimmed = part.trim();
+    if (!trimmed) {
+      continue;
+    }
+    const separator = trimmed.indexOf("=");
+    if (separator <= 0) {
+      continue;
+    }
+    const name = trimmed.slice(0, separator).trim();
+    const value = trimmed.slice(separator + 1).trim();
+    if (name && value) {
+      cookies[name] = value;
+    }
+  }
+  return cookies;
+}
+
+export function looksLikeCookieJar(value?: string): boolean {
+  if (!value) {
+    return false;
+  }
+  return value.includes(";") && value.includes("=");
+}
+
+export function sessionTokenFromCookies(cookies: Record<string, string>): string | undefined {
+  for (const name of SESSION_COOKIE_NAMES) {
+    if (cookies[name]) {
+      return cookies[name];
+    }
+  }
+  return undefined;
+}
+
 export function buildCookieHeader(
   sessionToken?: string,
   extraCookies?: Record<string, string>,
 ): string | undefined {
   const cookies: string[] = [];
-
-  if (sessionToken) {
-    for (const name of SESSION_COOKIE_NAMES) {
-      cookies.push(`${name}=${sessionToken}`);
-    }
-  }
+  const seen = new Set<string>();
 
   if (extraCookies) {
     for (const [name, value] of Object.entries(extraCookies)) {
-      if (value) {
-        cookies.push(`${name}=${value}`);
+      if (!value) {
+        continue;
+      }
+      cookies.push(`${name}=${value}`);
+      seen.add(name);
+    }
+  }
+
+  if (sessionToken) {
+    for (const name of SESSION_COOKIE_NAMES) {
+      if (!seen.has(name)) {
+        cookies.push(`${name}=${sessionToken}`);
       }
     }
   }
