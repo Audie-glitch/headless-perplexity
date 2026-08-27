@@ -110,11 +110,48 @@ Server-side fallback: `EMAILNATOR_COOKIES` or `x-emailnator-cookies`. The playgr
 
 This is unofficial and may violate Perplexity's terms. You are responsible for how you use it. Datacenter IPs often fail both Emailnator and Perplexity with Cloudflare 403. A minted `__Secure-next-auth.session-token` still needs a `cf_clearance` bound to this IP and user agent before `/api/ask` works from a server.
 
+### MCP
+
+This repo exposes the same WebUI tools over the Model Context Protocol. It is not a Comet MCP bridge.
+
+Stdio (Cursor / Claude Desktop):
+
+```bash
+npm run mcp
+```
+
+```json
+{
+  "mcpServers": {
+    "headless-perplexity": {
+      "command": "npx",
+      "args": ["tsx", "src/mcp/stdio.ts"],
+      "cwd": "/absolute/path/to/headless-perplexity",
+      "env": {
+        "PERPLEXITY_COOKIES": "",
+        "EMAILNATOR_COOKIES": ""
+      }
+    }
+  }
+}
+```
+
+Streamable HTTP: `POST http://127.0.0.1:43147/api/mcp`
+
+Tools: `perplexity_ask`, `perplexity_mint`, `perplexity_session`, `perplexity_models`, `perplexity_health`.
+
 ### Other routes
 
 - `GET /api/health` — process status, whether env credentials are present
 - `GET /api/session` — `GET https://www.perplexity.ai/api/auth/session`
 - `GET /api/v1/models` — registered WebUI model ids
+- `POST /api/mcp` — Streamable HTTP MCP
+
+Verify the local HTTP + MCP contract:
+
+```bash
+npm run verify:api
+```
 
 ## What this is not
 

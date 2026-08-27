@@ -547,6 +547,7 @@ export function Playground() {
             <TabsList>
               <TabsTrigger value="api">HTTP API</TabsTrigger>
               <TabsTrigger value="openai">OpenAI compatible</TabsTrigger>
+              <TabsTrigger value="mcp">MCP</TabsTrigger>
               <TabsTrigger value="notes">Limits</TabsTrigger>
             </TabsList>
             <TabsContent value="api">
@@ -572,6 +573,31 @@ export function Playground() {
   -H 'content-type: application/json' \\
   -d '{"model":"perplexity/best","messages":[{"role":"user","content":"Summarize QUIC"}],"cookies":"YOUR_WHOLE_COOKIE"}'`}
               />
+            </TabsContent>
+            <TabsContent value="mcp">
+              <CodeCard
+                title="Cursor / Claude Desktop (stdio)"
+                body={`{
+  "mcpServers": {
+    "headless-perplexity": {
+      "command": "npx",
+      "args": ["tsx", "src/mcp/stdio.ts"],
+      "cwd": "/absolute/path/to/headless-perplexity",
+      "env": {
+        "PERPLEXITY_COOKIES": "",
+        "EMAILNATOR_COOKIES": ""
+      }
+    }
+  }
+}`}
+              />
+              <div className="mt-3">
+                <CodeCard
+                  title="Remote MCP"
+                  body={`POST http://127.0.0.1:43147/api/mcp
+Tools: perplexity_ask, perplexity_mint, perplexity_session, perplexity_models, perplexity_health`}
+                />
+              </div>
             </TabsContent>
             <TabsContent value="notes">
               <Card className="border-white/10">
