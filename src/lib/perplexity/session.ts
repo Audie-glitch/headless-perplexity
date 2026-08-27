@@ -41,6 +41,56 @@ export function sessionTokenFromCookies(cookies: Record<string, string>): string
   return undefined;
 }
 
+export interface CookieJarInfo {
+  count: number;
+  hasSession: boolean;
+  hasClearance: boolean;
+  hasCfBm: boolean;
+  kind: "empty" | "session-token" | "partial" | "full";
+}
+
+export interface ParsedCookieInput {
+  sessionToken?: string;
+  extraCookies?: Record<string, string>;
+}
+
+export function parseCookieInput(raw?: string): ParsedCookieInput {
+  if (!raw?.trim()) {
+    return {};
+  }
+
+  const value = raw.trim();
+  if (looksLikeCookieJar(value) || (value.includes("=") && !value.startsWith("eyJ"))) {
+    const extraCookies = parseCookieString(value);
+    return {
+      sessionToken: sessionTokenFromCookies(extraCookies),
+      extraCookies: Object.keys(extraCookies).length ? extraCookies : undefined,
+    };
+  }
+
+  return { sessionToken: value };
+}
+
+export function inspectCookieJar(raw?: string): CookieJarInfo {
+  const parsed = parseCookieInput(raw);
+  const cookies = parsed.extraCookies ?? {};
+  const count = Object.keys(cookies).length || (parsed.sessionToken ? 1 : 0);
+  const hasSession = Boolean(parsed.sessionToken);
+  const hasClearance = Boolean(cookies.cf_clearance);
+  const hasCfBm = Boolean(cookies.__cf_bm);
+
+  if (!count) {
+    return { count: 0, hasSession: false, hasClearance: false, hasCfBm: false, kind: "empty" };
+  }
+  if (hasSession && hasClearance) {
+    return { count, hasSession, hasClearance, hasCfBm, kind: "full" };
+  }
+  if (hasSession && !looksLikeCookieJar(raw)) {
+    return { count, hasSession, hasClearance, hasCfBm, kind: "session-token" };
+  }
+  return { count, hasSession, hasClearance, hasCfBm, kind: "partial" };
+}
+
 export function buildCookieHeader(
   sessionToken?: string,
   extraCookies?: Record<string, string>,

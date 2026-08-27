@@ -1,4 +1,4 @@
-import { looksLikeCookieJar, parseCookieString, sessionTokenFromCookies } from "./session";
+import { looksLikeCookieJar, parseCookieInput, parseCookieString, sessionTokenFromCookies } from "./session";
 import type { ClientOptions } from "./types";
 
 export function extractSessionToken(request: Request): string | undefined {
@@ -96,11 +96,17 @@ export function extraCookiesFromRequest(request: Request): Record<string, string
   return extraCookiesFromEnv() ?? {};
 }
 
-export function clientOptionsFromRequest(request: Request): ClientOptions {
+export function clientOptionsFromRequest(request: Request, bodyCookies?: string): ClientOptions {
   const extraCookies = extraCookiesFromRequest(request);
+  const fromBody = parseCookieInput(bodyCookies);
+  const merged = {
+    ...extraCookies,
+    ...fromBody.extraCookies,
+  };
+
   return {
-    sessionToken: extractSessionToken(request),
+    sessionToken: fromBody.sessionToken ?? extractSessionToken(request),
     officialApiKey: extractOfficialKey(request),
-    extraCookies: Object.keys(extraCookies).length ? extraCookies : undefined,
+    extraCookies: Object.keys(merged).length ? merged : undefined,
   };
 }

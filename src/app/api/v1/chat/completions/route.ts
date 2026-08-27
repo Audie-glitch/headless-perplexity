@@ -32,7 +32,9 @@ export async function POST(request: Request) {
     return Response.json({ error: { message, type: "invalid_request_error" } }, { status: 400 });
   }
 
-  const client = new HeadlessPerplexity(clientOptionsFromRequest(request));
+  const client = new HeadlessPerplexity(
+    clientOptionsFromRequest(request, body.cookies ?? body.perplexity?.cookies),
+  );
   const model = body.model || "perplexity/best";
 
   if (body.stream) {

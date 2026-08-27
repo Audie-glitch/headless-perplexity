@@ -33,6 +33,12 @@ export interface AskInput {
   followUp?: ConversationCursor;
 }
 
+export interface AskRequestBody extends AskInput {
+  stream?: boolean;
+  /** Full `document.cookie` / Cookie header from perplexity.ai. Preferred over a session token alone. */
+  cookies?: string;
+}
+
 export interface SearchResult {
   title: string | null;
   snippet: string | null;

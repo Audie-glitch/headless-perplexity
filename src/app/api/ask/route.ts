@@ -1,20 +1,21 @@
 import { clientOptionsFromRequest, errorToPayload, HeadlessPerplexity } from "@/lib/perplexity";
-import type { AskInput, StreamDelta } from "@/lib/perplexity";
+import type { AskRequestBody, StreamDelta } from "@/lib/perplexity";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  let body: AskInput & { stream?: boolean };
+  let body: AskRequestBody;
 
   try {
-    body = (await request.json()) as AskInput & { stream?: boolean };
+    body = (await request.json()) as AskRequestBody;
   } catch {
     return Response.json({ error: { code: "VALIDATION_ERROR", message: "Invalid JSON body" } }, { status: 400 });
   }
 
-  const client = new HeadlessPerplexity(clientOptionsFromRequest(request));
+  const { cookies, stream, ...askInput } = body;
+  const client = new HeadlessPerplexity(clientOptionsFromRequest(request, cookies));
 
-  if (body.stream) {
+  if (stream) {
     const stream = new ReadableStream({
       async start(controller) {
         const encoder = new TextEncoder();
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
         };
 
         try {
-          for await (const event of client.askStream(body)) {
+          for await (const event of client.askStream(askInput)) {
             send(event);
           }
         } catch (error) {
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await client.ask(body);
+    const result = await client.ask(askInput);
     return Response.json(result);
   } catch (error) {
     const payload = errorToPayload(error);

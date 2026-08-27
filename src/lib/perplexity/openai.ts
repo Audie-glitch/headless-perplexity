@@ -11,12 +11,14 @@ export interface ChatCompletionRequest {
   model?: string;
   messages: ChatMessage[];
   stream?: boolean;
+  cookies?: string;
   perplexity?: {
     sources?: AskInput["sources"];
     timeRange?: AskInput["timeRange"];
     incognito?: boolean;
     language?: string;
     thread?: ConversationCursor;
+    cookies?: string;
   };
 }
 

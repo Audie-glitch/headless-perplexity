@@ -31,7 +31,8 @@ npm run build
 | Method | How |
 | --- | --- |
 | Anonymous | Omit a token. Free/auto queries may work from residential IPs. |
-| WebUI session | Paste a full `perplexity.ai` cookie string (preferred, includes `cf_clearance`) or just `__Secure-next-auth.session-token`. Send `x-perplexity-cookies`, `Authorization: Bearer <token>`, or set `PERPLEXITY_SESSION_TOKEN` / `PERPLEXITY_COOKIES`. |
+| Whole cookie (preferred) | Paste the entire `perplexity.ai` Cookie header (`document.cookie` or DevTools → Request Headers → `cookie`). Must include `__Secure-next-auth.session-token` and usually `cf_clearance` / `__cf_bm`. Send it as JSON `cookies`, `x-perplexity-cookies`, or `PERPLEXITY_COOKIES`. |
+| Session token only | `__Secure-next-auth.session-token` via `Authorization: Bearer` or `PERPLEXITY_SESSION_TOKEN`. Often blocked by Cloudflare. |
 | Official fallback | Set `PERPLEXITY_API_KEY`. Used only when the unofficial WebUI path returns 401/403. |
 
 Session tokens are bearer credentials. Keep them out of git, shell history, and any host bound to `0.0.0.0`.
@@ -43,12 +44,12 @@ Session tokens are bearer credentials. Keep them out of git, shell history, and 
 ```bash
 curl -N http://127.0.0.1:43147/api/ask \
   -H 'content-type: application/json' \
-  -H 'authorization: Bearer YOUR_SESSION_TOKEN' \
   -d '{
     "query": "What is DNS over HTTPS?",
     "model": "perplexity/best",
     "sources": ["web"],
-    "stream": true
+    "stream": true,
+    "cookies": "cf_clearance=...; __Secure-next-auth.session-token=..."
   }'
 ```
 
@@ -73,10 +74,10 @@ OpenAI-compatible. Point any OpenAI SDK at `http://127.0.0.1:43147/api/v1`.
 ```bash
 curl http://127.0.0.1:43147/api/v1/chat/completions \
   -H 'content-type: application/json' \
-  -H 'authorization: Bearer YOUR_SESSION_TOKEN' \
   -d '{
     "model": "perplexity/best",
-    "messages": [{"role": "user", "content": "Summarize QUIC"}]
+    "messages": [{"role": "user", "content": "Summarize QUIC"}],
+    "cookies": "cf_clearance=...; __Secure-next-auth.session-token=..."
   }'
 ```
 

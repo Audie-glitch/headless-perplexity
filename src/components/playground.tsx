@@ -14,7 +14,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -29,6 +28,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { MODELS } from "@/lib/perplexity/models";
+import { inspectCookieJar, type CookieJarInfo } from "@/lib/perplexity/session";
 import type { AskResult, SearchResult, SourceFocus } from "@/lib/perplexity/types";
 
 interface ChatTurn {
@@ -52,11 +52,11 @@ export function Playground() {
   const [model, setModel] = useState("perplexity/best");
   const [sources, setSources] = useState<SourceFocus[]>(["web"]);
   const [stream, setStream] = useState(true);
-  const [sessionToken, setSessionToken] = useState(() => {
+  const [cookieJar, setCookieJar] = useState(() => {
     if (typeof window === "undefined") {
       return "";
     }
-    return sessionStorage.getItem("plex.session") ?? "";
+    return sessionStorage.getItem("plex.cookies") ?? sessionStorage.getItem("plex.session") ?? "";
   });
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [busy, setBusy] = useState(false);
@@ -72,9 +72,9 @@ export function Playground() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("plex.session");
+    const stored = sessionStorage.getItem("plex.cookies") ?? sessionStorage.getItem("plex.session");
     if (stored) {
-      const frame = window.requestAnimationFrame(() => setSessionToken(stored));
+      const frame = window.requestAnimationFrame(() => setCookieJar(stored));
       return () => window.cancelAnimationFrame(frame);
     }
     return undefined;
@@ -96,15 +96,23 @@ export function Playground() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [turns]);
 
+  const cookieInfo = useMemo(() => inspectCookieJar(cookieJar), [cookieJar]);
+
   const authMode = useMemo(() => {
-    if (sessionToken || health?.hasSessionEnv) {
-      return "Session token";
+    if (cookieInfo.kind === "full") {
+      return "Whole cookie";
+    }
+    if (cookieInfo.kind === "partial") {
+      return "Partial cookie";
+    }
+    if (cookieInfo.kind === "session-token" || health?.hasSessionEnv) {
+      return "Session token only";
     }
     if (health?.hasOfficialKey) {
       return "Official key fallback";
     }
     return "Anonymous";
-  }, [health, sessionToken]);
+  }, [cookieInfo.kind, health]);
 
   function toggleSource(source: SourceFocus) {
     setSources((current) => {
@@ -128,9 +136,10 @@ export function Playground() {
       return;
     }
 
-    if (sessionToken) {
-      sessionStorage.setItem("plex.session", sessionToken);
+    if (cookieJar.trim()) {
+      sessionStorage.setItem("plex.cookies", cookieJar);
     } else {
+      sessionStorage.removeItem("plex.cookies");
       sessionStorage.removeItem("plex.session");
     }
 
@@ -146,20 +155,13 @@ export function Playground() {
     setError(null);
 
     const headers: Record<string, string> = { "content-type": "application/json" };
-    if (sessionToken.trim()) {
-      if (sessionToken.includes(";") && sessionToken.includes("=")) {
-        headers["x-perplexity-cookies"] = sessionToken.trim();
-      } else {
-        headers.authorization = `Bearer ${sessionToken.trim()}`;
-      }
-    }
-
     const body = {
       query: text,
       model,
       sources: sources.length ? sources : ["web"],
       stream,
       followUp: cursor.backendUuid ? cursor : undefined,
+      cookies: cookieJar.trim() || undefined,
     };
 
     try {
@@ -370,19 +372,21 @@ export function Playground() {
             <Separator />
 
             <div className="space-y-2">
-              <Label htmlFor="token">Session cookie</Label>
-              <Input
+              <Label htmlFor="token">Whole cookie</Label>
+              <Textarea
                 id="token"
-                type="password"
                 autoComplete="off"
-                placeholder="Full cookie header or __Secure-next-auth.session-token"
-                value={sessionToken}
-                onChange={(event) => setSessionToken(event.target.value)}
+                spellCheck={false}
+                rows={6}
+                placeholder="Paste the entire perplexity.ai cookie header here. Include cf_clearance, __cf_bm, and __Secure-next-auth.session-token."
+                value={cookieJar}
+                onChange={(event) => setCookieJar(event.target.value)}
               />
+              <CookieStatus info={cookieInfo} />
               <p className="text-xs text-muted-foreground">
-                Optional. A full Perplexity cookie string works better than the
-                session token alone because it can include cf_clearance. Stored
-                in sessionStorage only. Revoke the session when you are done.
+                Prefer the whole Cookie header from DevTools, not just the
+                session token. Cloudflare clearance is bound to that jar. Stored
+                in sessionStorage only — revoke the session when you are done.
               </p>
             </div>
 
@@ -457,8 +461,7 @@ export function Playground() {
                 title="Native ask"
                 body={`curl -N http://127.0.0.1:43147/api/ask \\
   -H 'content-type: application/json' \\
-  -H 'authorization: Bearer YOUR_SESSION_TOKEN' \\
-  -d '{"query":"What is DNS over HTTPS?","model":"perplexity/best","stream":true}'`}
+  -d '{"query":"What is DNS over HTTPS?","model":"perplexity/best","stream":true,"cookies":"YOUR_WHOLE_COOKIE"}'`}
               />
             </TabsContent>
             <TabsContent value="openai">
@@ -466,15 +469,14 @@ export function Playground() {
                 title="Chat completions"
                 body={`curl http://127.0.0.1:43147/api/v1/chat/completions \\
   -H 'content-type: application/json' \\
-  -H 'authorization: Bearer YOUR_SESSION_TOKEN' \\
-  -d '{"model":"perplexity/best","messages":[{"role":"user","content":"Summarize QUIC"}]}'`}
+  -d '{"model":"perplexity/best","messages":[{"role":"user","content":"Summarize QUIC"}],"cookies":"YOUR_WHOLE_COOKIE"}'`}
               />
             </TabsContent>
             <TabsContent value="notes">
               <Card className="border-white/10">
                 <CardContent className="space-y-2 pt-4 text-sm text-muted-foreground">
                   <p>This is unofficial. Perplexity can change the WebUI contract without notice.</p>
-                  <p>Datacenter IPs are often blocked by Cloudflare. A browser-minted session token from the same IP works more reliably than anonymous calls.</p>
+                  <p>Datacenter IPs are often blocked by Cloudflare. Paste the whole cookie header, including cf_clearance, not just the session token.</p>
                   <p>Account generation and rate-limit bypass are intentionally not implemented.</p>
                   <p>Do not expose this server beyond localhost unless you add your own auth.</p>
                 </CardContent>
@@ -484,6 +486,35 @@ export function Playground() {
         </div>
       </main>
     </div>
+  );
+}
+
+function CookieStatus({ info }: { info: CookieJarInfo }) {
+  if (info.kind === "empty") {
+    return (
+      <p className="text-xs text-amber-200/80">
+        No cookie yet. A session token alone often fails Cloudflare. Paste the
+        whole header.
+      </p>
+    );
+  }
+
+  if (info.kind === "session-token" || (info.hasSession && !info.hasClearance)) {
+    return (
+      <p className="text-xs text-amber-200/80">
+        Session token detected, but cf_clearance is missing. Paste the whole
+        cookie header.
+      </p>
+    );
+  }
+
+  return (
+    <p className="text-xs text-emerald-200/80">
+      {info.count} cookies
+      {info.hasSession ? " · session" : ""}
+      {info.hasClearance ? " · cf_clearance" : ""}
+      {info.hasCfBm ? " · __cf_bm" : ""}
+    </p>
   );
 }
 
