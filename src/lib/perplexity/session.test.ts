@@ -44,5 +44,9 @@ describe("buildCookieHeader", () => {
       header,
       "__Secure-next-auth.session-token=token-a; cf_clearance=clear; next-auth.session-token=token-a",
     );
+    assert.equal(
+      buildCookieHeader("ignored", { cf_clearance: "x" }, "cf_clearance=keep-me; other=1"),
+      "cf_clearance=keep-me; other=1",
+    );
   });
 });

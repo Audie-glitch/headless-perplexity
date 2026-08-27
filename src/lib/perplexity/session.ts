@@ -52,6 +52,7 @@ export interface CookieJarInfo {
 export interface ParsedCookieInput {
   sessionToken?: string;
   extraCookies?: Record<string, string>;
+  rawCookieHeader?: string;
 }
 
 export function parseCookieInput(raw?: string): ParsedCookieInput {
@@ -65,6 +66,7 @@ export function parseCookieInput(raw?: string): ParsedCookieInput {
     return {
       sessionToken: sessionTokenFromCookies(extraCookies),
       extraCookies: Object.keys(extraCookies).length ? extraCookies : undefined,
+      rawCookieHeader: value,
     };
   }
 
@@ -94,7 +96,11 @@ export function inspectCookieJar(raw?: string): CookieJarInfo {
 export function buildCookieHeader(
   sessionToken?: string,
   extraCookies?: Record<string, string>,
+  rawCookieHeader?: string,
 ): string | undefined {
+  if (rawCookieHeader?.trim()) {
+    return rawCookieHeader.trim();
+  }
   const cookies: string[] = [];
   const seen = new Set<string>();
 

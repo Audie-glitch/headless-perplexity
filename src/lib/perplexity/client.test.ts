@@ -29,7 +29,7 @@ describe("HeadlessPerplexity", () => {
           params: { last_backend_uuid?: string };
         };
         assert.equal(payload.query_str, "What is QUIC?");
-        assert.equal(payload.params.last_backend_uuid, undefined);
+        assert.equal(payload.params.last_backend_uuid, null);
         return new Response(
           [
             'data: {"text":"{\\"answer\\":\\"A UDP transport\\",\\"web_results\\":[{\\"name\\":\\"IETF\\",\\"url\\":\\"https://quic.example\\",\\"snippet\\":\\"spec\\"}]}","backend_uuid":"thread-9","final":true}',

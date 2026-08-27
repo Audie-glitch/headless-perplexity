@@ -17,14 +17,20 @@ export function buildAskPayload(input: AskInput, model: PerplexityModel): AskPay
   );
   const recency = TIME_MAP[input.timeRange ?? "all"] ?? "";
 
+  const requestMode = model.mode === "concise" ? "CONCISE" : "COPILOT";
+  const searchMode = model.mode === "research" ? "research" : "search";
+
   const params: Record<string, unknown> = {
     attachments: [],
+    frontend_context_uuid: crypto.randomUUID(),
+    frontend_uuid: crypto.randomUUID(),
     language: input.language ?? DEFAULT_LANGUAGE,
     timezone: input.timezone ?? DEFAULT_TIMEZONE,
     client_coordinates: null,
     sources,
     model_preference: model.identifier,
-    mode: model.mode,
+    mode: requestMode,
+    search_mode: searchMode,
     search_focus: "internet",
     search_recency_filter: recency || null,
     is_incognito: input.incognito ?? false,
@@ -32,6 +38,7 @@ export function buildAskPayload(input: AskInput, model: PerplexityModel): AskPay
     local_search_enabled: false,
     prompt_source: "user",
     send_back_text_in_streaming_api: false,
+    last_backend_uuid: null,
     version: API_VERSION,
     source: "default",
   };

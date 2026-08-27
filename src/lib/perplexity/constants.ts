@@ -23,14 +23,14 @@ export const BROWSER_HEADERS: Record<string, string> = {
   pragma: "no-cache",
   origin: API_BASE_URL,
   referer: `${API_BASE_URL}/`,
-  "sec-ch-ua": '"Not;A=Brand";v="24", "Chromium";v="128", "Google Chrome";v="128"',
+  "sec-ch-ua": '"Microsoft Edge";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
   "sec-ch-ua-mobile": "?0",
   "sec-ch-ua-platform": '"Windows"',
   "sec-fetch-dest": "empty",
   "sec-fetch-mode": "cors",
   "sec-fetch-site": "same-origin",
   "user-agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36 Edg/131.0.0.0",
 };
 
 export const SOURCE_MAP: Record<string, string> = {

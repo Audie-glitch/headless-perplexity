@@ -10,6 +10,7 @@ import { identifierForTier, resolveModel } from "./models";
 import { officialAsk, officialAskStream } from "./official";
 import { buildAskPayload } from "./payload";
 import { buildCookieHeader, parseSessionPayload, requestHeaders, webUrl } from "./session";
+import { createChromeFetch } from "./transport";
 import {
   applySseData,
   createSchematizedState,
@@ -33,14 +34,16 @@ const ASK_TIMEOUT_MS = 180_000;
 export class HeadlessPerplexity {
   private readonly sessionToken?: string;
   private readonly extraCookies?: Record<string, string>;
+  private readonly rawCookieHeader?: string;
   private readonly officialApiKey?: string;
   private readonly fetchImpl: typeof fetch;
 
   constructor(options: ClientOptions = {}) {
     this.sessionToken = options.sessionToken;
     this.extraCookies = options.extraCookies;
+    this.rawCookieHeader = options.rawCookieHeader;
     this.officialApiKey = options.officialApiKey;
-    this.fetchImpl = options.fetchImpl ?? fetch;
+    this.fetchImpl = options.fetchImpl ?? createChromeFetch();
   }
 
   async session(): Promise<SessionInfo> {
@@ -231,13 +234,19 @@ export class HeadlessPerplexity {
   }
 
   private cookieHeader(): string | undefined {
-    return buildCookieHeader(this.sessionToken, this.extraCookies);
+    return buildCookieHeader(this.sessionToken, this.extraCookies, this.rawCookieHeader);
   }
 
   private mapStatus(status: number, body: string): Error {
+    const lowered = body.toLowerCase();
+    const cloudflare = ["cloudflare", "cf-browser-verification", "just a moment", "challenge-platform", "ray id"].some(
+      (needle) => lowered.includes(needle),
+    );
     if (status === 401 || status === 403) {
       return new AuthenticationError(
-        `Perplexity WebUI blocked the request (${status}). A browser session token from perplexity.ai is usually required. Cloudflare may also reject datacenter IPs.`,
+        cloudflare
+          ? `Cloudflare blocked the request (${status}). Paste the whole Edge cookie header, including cf_clearance.`
+          : `Perplexity WebUI blocked the request (${status}). Paste the whole perplexity.ai cookie header, not just the session token.`,
         status,
       );
     }

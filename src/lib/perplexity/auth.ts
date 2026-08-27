@@ -104,9 +104,16 @@ export function clientOptionsFromRequest(request: Request, bodyCookies?: string)
     ...fromBody.extraCookies,
   };
 
+  const rawCookieHeader =
+    bodyCookies?.trim() ||
+    request.headers.get("x-perplexity-cookies")?.trim() ||
+    process.env.PERPLEXITY_COOKIES?.trim() ||
+    fromBody.rawCookieHeader;
+
   return {
     sessionToken: fromBody.sessionToken ?? extractSessionToken(request),
     officialApiKey: extractOfficialKey(request),
     extraCookies: Object.keys(merged).length ? merged : undefined,
+    rawCookieHeader: looksLikeCookieJar(rawCookieHeader) ? rawCookieHeader : undefined,
   };
 }

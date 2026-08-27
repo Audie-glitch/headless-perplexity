@@ -80,6 +80,7 @@ export interface SessionInfo {
 export interface ClientOptions {
   sessionToken?: string;
   extraCookies?: Record<string, string>;
+  rawCookieHeader?: string;
   officialApiKey?: string;
   fetchImpl?: typeof fetch;
 }

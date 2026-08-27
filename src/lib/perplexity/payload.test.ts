@@ -12,10 +12,12 @@ describe("buildAskPayload", () => {
 
     assert.equal(payload.query_str, "What is DNS over HTTPS?");
     assert.equal(payload.params.model_preference, "turbo");
-    assert.equal(payload.params.mode, "copilot");
+    assert.equal(payload.params.mode, "COPILOT");
+    assert.equal(payload.params.search_mode, "search");
+    assert.equal(typeof payload.params.frontend_uuid, "string");
     assert.deepEqual(payload.params.sources, ["web", "scholar"]);
     assert.equal(payload.params.use_schematized_api, true);
-    assert.equal(payload.params.last_backend_uuid, undefined);
+    assert.equal(payload.params.last_backend_uuid, null);
   });
 
   it("attaches follow-up tokens", () => {
@@ -30,7 +32,7 @@ describe("buildAskPayload", () => {
     assert.equal(payload.params.last_backend_uuid, "abc");
     assert.equal(payload.params.read_write_token, "rw");
     assert.equal(payload.params.query_source, "followup");
-    assert.equal(payload.params.mode, "concise");
+    assert.equal(payload.params.mode, "CONCISE");
   });
 });
 

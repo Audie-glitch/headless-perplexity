@@ -101,6 +101,8 @@ Perplexity can change the WebUI contract at any time. Cloudflare often blocks da
 Studied, not vendored:
 
 - [helallao/perplexity-ai](https://github.com/helallao/perplexity-ai) — Python WebUI wrapper and SSE ask client
+- [Soliver84/perplexity-ai-PRO-FREE](https://github.com/Soliver84/perplexity-ai-PRO-FREE) — same wrapper plus Emailnator account generation. Not used here.
+- [yuki-20/PerplexiCode](https://github.com/yuki-20/PerplexiCode) — VS Code agent that pastes the whole Edge cookie header and uses a Chrome-like TLS fingerprint
 - [Villoh/tunnel-agent](https://github.com/Villoh/tunnel-agent) — desktop manager for local engines, including Perplexity sessions
 - [henrique-coder/perplexity-webui-scraper](https://github.com/henrique-coder/perplexity-webui-scraper) — current WebUI payload, search-init, and schematized stream format
 - Community Comet MCP bridges — CDP control of an already-open Comet window; unused here

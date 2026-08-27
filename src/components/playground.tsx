@@ -366,9 +366,9 @@ export function Playground() {
               />
               <CookieStatus info={cookieInfo} />
               <p className="text-xs text-muted-foreground">
-                Prefer the whole Cookie header from DevTools, not just the
-                session token. Cloudflare clearance is bound to that jar. Stored
-                in sessionStorage only — revoke the session when you are done.
+                Copy from Microsoft Edge: F12 → Network → any perplexity.ai
+                request → Request Headers → cookie. Paste the entire value, not
+                just the session token. Stored in sessionStorage only.
               </p>
             </div>
 
