@@ -69,7 +69,7 @@ export function modelsAction() {
 export function healthAction() {
   return {
     ok: true,
-    name: "headless-perplexity",
+    name: "riptide",
     cometRequired: false,
     engine: "webui",
     mcp: true,

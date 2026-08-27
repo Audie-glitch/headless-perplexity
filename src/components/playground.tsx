@@ -29,6 +29,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { BRAND } from "@/lib/brand";
 import { MODELS } from "@/lib/perplexity/models";
 import { inspectCookieJar, type CookieJarInfo } from "@/lib/perplexity/session";
 import type { AskResult, SearchResult, SourceFocus } from "@/lib/perplexity/types";
@@ -330,25 +331,24 @@ export function Playground() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_top,_rgba(232,196,104,0.08),_transparent_42%),linear-gradient(180deg,_oklch(0.16_0.025_250),_oklch(0.13_0.02_250))]">
+    <div className="flex min-h-screen flex-col bg-[radial-gradient(circle_at_18%_-10%,_oklch(0.45_0.12_38_/_0.28),_transparent_42%),radial-gradient(circle_at_88%_0%,_oklch(0.4_0.08_200_/_0.22),_transparent_36%),linear-gradient(180deg,_oklch(0.15_0.03_210),_oklch(0.12_0.02_210))]">
       <header className="border-b border-white/10 px-4 py-4 md:px-8">
         <div className="mx-auto flex max-w-6xl flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-xs font-medium tracking-[0.2em] text-primary uppercase">
-              Unofficial WebUI bridge
+            <p className="font-mono text-[11px] font-medium tracking-[0.22em] text-primary uppercase">
+              {BRAND.eyebrow}
             </p>
-            <h1 className="font-heading text-2xl font-semibold tracking-tight md:text-3xl">
-              Headless Perplexity
+            <h1 className="font-heading text-3xl font-medium tracking-tight md:text-4xl">
+              {BRAND.name}
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              Query Perplexity over HTTP. No Comet browser, no Chrome DevTools
-              Protocol, no connector OAuth. Paste a cookie jar or mint a free
-              session through official email sign-in. Credentials stay on this machine.
+              {BRAND.description} Paste a cookie jar or mint a free session through
+              official email sign-in. Credentials stay on this machine.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">{authMode}</Badge>
-            <Badge variant="outline">Comet not required</Badge>
+            <Badge variant="outline">{BRAND.badge}</Badge>
           </div>
         </div>
       </header>
@@ -524,7 +524,7 @@ export function Playground() {
                 <Textarea
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Ask Perplexity without opening Comet…"
+                  placeholder="Ask without opening a browser…"
                   rows={3}
                   disabled={busy}
                 />
@@ -579,10 +579,10 @@ export function Playground() {
                 title="Cursor / Claude Desktop (stdio)"
                 body={`{
   "mcpServers": {
-    "headless-perplexity": {
+                "riptide": {
       "command": "npx",
       "args": ["tsx", "src/mcp/stdio.ts"],
-      "cwd": "/absolute/path/to/headless-perplexity",
+      "cwd": "/absolute/path/to/riptide",
       "env": {
         "PERPLEXITY_COOKIES": "",
         "EMAILNATOR_COOKIES": ""
@@ -651,7 +651,7 @@ function EmptyState() {
       <div className="flex gap-2">
         <Badge variant="outline">
           <Radio data-icon="inline-start" />
-          Headless
+          Current
         </Badge>
         <Badge variant="outline">
           <Shield data-icon="inline-start" />
@@ -663,10 +663,10 @@ function EmptyState() {
         </Badge>
       </div>
       <div className="space-y-2">
-        <p className="text-lg font-medium">No thread yet</p>
+        <p className="font-heading text-xl font-medium">The water is still</p>
         <p className="max-w-md text-sm text-muted-foreground">
-          Ask a question to hit Perplexity&apos;s public WebUI from this server.
-          The first answer starts a conversation you can follow up on.
+          Ask a question. Riptide hits Perplexity&apos;s public WebUI from this
+          machine. The first answer starts a thread you can follow up on.
         </p>
       </div>
     </div>

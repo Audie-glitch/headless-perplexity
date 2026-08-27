@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 export function GET() {
   return NextResponse.json({
     ok: true,
-    name: "headless-perplexity",
+    name: "riptide",
     cometRequired: false,
     engine: "webui",
     mcpHttp: "/api/mcp",

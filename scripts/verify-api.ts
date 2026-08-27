@@ -178,7 +178,7 @@ const mcpHealth = await json("/api/mcp", {
 });
 record(
   "POST /api/mcp tools/call perplexity_health",
-  mcpHealth.status === 200 && /headless-perplexity/.test(mcpHealth.text),
+  mcpHealth.status === 200 && /riptide/.test(mcpHealth.text),
   `${mcpHealth.status} ${mcpHealth.text.slice(0, 160)}`,
 );
 

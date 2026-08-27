@@ -2,9 +2,10 @@
 
 import { useCallback, useState, useSyncExternalStore } from "react";
 
-const STORAGE_KEY = "plex.cookies";
-const LEGACY_KEY = "plex.session";
-const CHANGE_EVENT = "plex-cookies";
+const STORAGE_KEY = "riptide.cookies";
+const LEGACY_KEY = "plex.cookies";
+const LEGACY_SESSION = "plex.session";
+const CHANGE_EVENT = "riptide-cookies";
 
 function subscribe(onChange: () => void) {
   window.addEventListener("storage", onChange);
@@ -16,7 +17,12 @@ function subscribe(onChange: () => void) {
 }
 
 function readPersisted(): string {
-  return sessionStorage.getItem(STORAGE_KEY) ?? sessionStorage.getItem(LEGACY_KEY) ?? "";
+  return (
+    sessionStorage.getItem(STORAGE_KEY) ??
+    sessionStorage.getItem(LEGACY_KEY) ??
+    sessionStorage.getItem(LEGACY_SESSION) ??
+    ""
+  );
 }
 
 function writePersisted(value: string) {
@@ -25,6 +31,7 @@ function writePersisted(value: string) {
   } else {
     sessionStorage.removeItem(STORAGE_KEY);
     sessionStorage.removeItem(LEGACY_KEY);
+    sessionStorage.removeItem(LEGACY_SESSION);
   }
   window.dispatchEvent(new Event(CHANGE_EVENT));
 }
@@ -47,8 +54,9 @@ export function useCookieJar() {
   return { cookieJar, setCookieJar: setDraft, persist, persistValue };
 }
 
-const EMAILNATOR_KEY = "plex.emailnator";
-const EMAILNATOR_EVENT = "plex-emailnator";
+const EMAILNATOR_KEY = "riptide.emailnator";
+const EMAILNATOR_LEGACY = "plex.emailnator";
+const EMAILNATOR_EVENT = "riptide-emailnator";
 
 function subscribeEmailnator(onChange: () => void) {
   window.addEventListener("storage", onChange);
@@ -60,7 +68,7 @@ function subscribeEmailnator(onChange: () => void) {
 }
 
 function readEmailnator(): string {
-  return sessionStorage.getItem(EMAILNATOR_KEY) ?? "";
+  return sessionStorage.getItem(EMAILNATOR_KEY) ?? sessionStorage.getItem(EMAILNATOR_LEGACY) ?? "";
 }
 
 function writeEmailnator(value: string) {
@@ -68,6 +76,7 @@ function writeEmailnator(value: string) {
     sessionStorage.setItem(EMAILNATOR_KEY, value.trim());
   } else {
     sessionStorage.removeItem(EMAILNATOR_KEY);
+    sessionStorage.removeItem(EMAILNATOR_LEGACY);
   }
   window.dispatchEvent(new Event(EMAILNATOR_EVENT));
 }

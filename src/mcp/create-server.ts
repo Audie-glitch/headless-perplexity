@@ -16,7 +16,7 @@ function catchResult(error: unknown) {
 
 export function createMcpServer() {
   const server = new McpServer({
-    name: "headless-perplexity",
+    name: "riptide",
     version: "0.1.0",
   });
 

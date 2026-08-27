@@ -1,6 +1,6 @@
-# Headless Perplexity
+# Riptide
 
-Unofficial HTTP API and playground for [Perplexity](https://www.perplexity.ai) that talks to the public WebUI. It does **not** require the Comet browser, Chrome DevTools Protocol, or Perplexity connector OAuth.
+The unofficial current under the [Perplexity](https://www.perplexity.ai) WebUI. HTTP API, playground, and MCP. It does **not** require the Comet browser, Chrome DevTools Protocol, or Perplexity connector OAuth.
 
 This is a research-informed reimplementation, not a fork. It follows the same WebUI path used by public unofficial clients:
 
@@ -123,10 +123,10 @@ npm run mcp
 ```json
 {
   "mcpServers": {
-    "headless-perplexity": {
+    "riptide": {
       "command": "npx",
       "args": ["tsx", "src/mcp/stdio.ts"],
-      "cwd": "/absolute/path/to/headless-perplexity",
+      "cwd": "/absolute/path/to/riptide",
       "env": {
         "PERPLEXITY_COOKIES": "",
         "EMAILNATOR_COOKIES": ""

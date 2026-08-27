@@ -1,8 +1,8 @@
 {
-  "name": "headless-perplexity",
+  "name": "riptide",
   "version": "0.1.0",
   "private": true,
-  "description": "Unofficial headless Perplexity API that uses the public WebUI, not Comet.",
+  "description": "Riptide — unofficial HTTP and MCP current under the Perplexity WebUI. No Comet.",
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1 --port 43147",
     "build": "next build",
