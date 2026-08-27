@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useCookieJar } from "@/hooks/use-cookie-jar";
 import {
   AlertCircle,
   BookOpen,
@@ -52,12 +53,7 @@ export function Playground() {
   const [model, setModel] = useState("perplexity/best");
   const [sources, setSources] = useState<SourceFocus[]>(["web"]);
   const [stream, setStream] = useState(true);
-  const [cookieJar, setCookieJar] = useState(() => {
-    if (typeof window === "undefined") {
-      return "";
-    }
-    return sessionStorage.getItem("plex.cookies") ?? sessionStorage.getItem("plex.session") ?? "";
-  });
+  const { cookieJar, setCookieJar, persist } = useCookieJar();
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -70,15 +66,6 @@ export function Playground() {
     readWriteToken?: string | null;
   }>({});
   const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const stored = sessionStorage.getItem("plex.cookies") ?? sessionStorage.getItem("plex.session");
-    if (stored) {
-      const frame = window.requestAnimationFrame(() => setCookieJar(stored));
-      return () => window.cancelAnimationFrame(frame);
-    }
-    return undefined;
-  }, []);
 
   useEffect(() => {
     void fetch("/api/health")
@@ -136,12 +123,7 @@ export function Playground() {
       return;
     }
 
-    if (cookieJar.trim()) {
-      sessionStorage.setItem("plex.cookies", cookieJar);
-    } else {
-      sessionStorage.removeItem("plex.cookies");
-      sessionStorage.removeItem("plex.session");
-    }
+    persist();
 
     const userTurn: ChatTurn = { id: crypto.randomUUID(), role: "user", content: text };
     const assistantId = crypto.randomUUID();
