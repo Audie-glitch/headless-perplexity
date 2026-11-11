@@ -1,5 +1,6 @@
 export const API_BASE_URL = "https://www.perplexity.ai";
 export const OFFICIAL_API_BASE_URL = "https://api.perplexity.ai";
+export const OFFICIAL_INTEGRATION_HEADER = "headless-perplexity";
 export const API_VERSION = "2.18";
 
 export const ENDPOINT_ASK = "/rest/sse/perplexity_ask";

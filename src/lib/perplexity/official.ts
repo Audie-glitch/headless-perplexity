@@ -1,4 +1,4 @@
-import { OFFICIAL_API_BASE_URL } from "./constants";
+import { OFFICIAL_API_BASE_URL, OFFICIAL_INTEGRATION_HEADER } from "./constants";
 import { AuthenticationError, RateLimitError, UpstreamError } from "./errors";
 import { officialModelFor } from "./models";
 import type { AskInput, AskResult, PerplexityModel, StreamDelta } from "./types";
@@ -23,6 +23,7 @@ export async function officialAsk(
     headers: {
       authorization: `Bearer ${apiKey}`,
       "content-type": "application/json",
+      "x-pplx-integration": OFFICIAL_INTEGRATION_HEADER,
     },
     body: JSON.stringify({
       model: officialModelFor(model),
@@ -59,6 +60,7 @@ export async function* officialAskStream(
     headers: {
       authorization: `Bearer ${apiKey}`,
       "content-type": "application/json",
+      "x-pplx-integration": OFFICIAL_INTEGRATION_HEADER,
     },
     body: JSON.stringify({
       model: officialModelFor(model),
